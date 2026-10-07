@@ -54,7 +54,7 @@ jobs:
       - run: pnpm --filter @viaroute/web build
 
   cloudflare:
-    name: Cloudflare Worker checks
+    name: Cloudflare Worker + media agent checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +64,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @viaroute/cloudflare typecheck
       - run: pnpm --filter @viaroute/cloudflare test
+      - run: pnpm --filter @viaroute/media-agent test
 
   images:
     name: Build & push images
