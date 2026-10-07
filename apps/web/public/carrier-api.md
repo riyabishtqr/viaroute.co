@@ -10,6 +10,9 @@ ViaRoute makes all routing decisions (which buyer, caps, hours, failover, billin
                  └──── command: answer, speak, dial, bridge … ◄─────┘
 ```
 
+> **Plain SIP trunks** (Verizon resellers, wholesale carriers): you don't have to build this — the ViaRoute media server
+> (FreeSWITCH + media agent, `infra/media`) implements this API for any trunk that sends calls to an IP. See `infra/media/README.md`.
+
 Set it up in **Admin → Carriers → Add carrier → Custom API**. You get:
 
 | From ViaRoute | Put it in your platform |

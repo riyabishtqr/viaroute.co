@@ -1,0 +1,66 @@
+# TEST ONLY: media server + agent + a fake SIP trunk on a private Docker network.
+#   docker compose -f infra/media/test/docker-compose.yml up -d --build
+#   pnpm --filter @viaroute/media-agent test:sip
+name: viaroute-media-test
+
+networks:
+  sip:
+    ipam:
+      config:
+        - subnet: 172.29.0.0/24
+
+volumes:
+  fsgen:
+  recordings:
+
+services:
+  media:
+    build: ../freeswitch
+    environment:
+      ESL_PASSWORD: test-esl
+      ESL_LISTEN_IP: 0.0.0.0
+      ESL_ALLOW: 172.29.0.0/24
+      EXTERNAL_IP: 172.29.0.10
+      RTP_START_PORT: "30000"
+      RTP_END_PORT: "30500"
+      LOG_LEVEL: warning
+    volumes:
+      - fsgen:/etc/freeswitch/viaroute
+      - recordings:/recordings
+    networks:
+      sip: { ipv4_address: 172.29.0.10 }
+
+  agent:
+    build: ../../../apps/media-agent
+    depends_on: [media]
+    environment:
+      # The SIP e2e test (apps/api/test/sip-media) points these at a real ViaRoute API.
+      VIAROUTE_WEBHOOK_URL: ${VIAROUTE_WEBHOOK_URL:-http://host.docker.internal:18099/webhook}
+      VIAROUTE_WEBHOOK_SECRET: ${VIAROUTE_WEBHOOK_SECRET:-whsec_test}
+      AGENT_API_KEY: test-agent-key
+      PUBLIC_URL: http://localhost:18088
+      LISTEN_HOST: 0.0.0.0
+      LISTEN_PORT: "8088"
+      ESL_HOST: 172.29.0.10
+      ESL_PASSWORD: test-esl
+      TRUNKS_FILE: /etc/viaroute/trunks.json
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./trunks.json:/etc/viaroute/trunks.json:ro
+      - fsgen:/etc/freeswitch/viaroute
+      - recordings:/recordings
+    ports:
+      - "18088:8088"
+    networks:
+      sip: { ipv4_address: 172.29.0.30 }
+
+  # Plays the SIP trunk (Verizon reseller): starts inbound calls, answers outbound ones.
+  carrier:
+    image: safarov/freeswitch:latest
+    volumes:
+      - ./carrier/freeswitch.xml:/etc/freeswitch/freeswitch.xml:ro
+    ports:
+      - "18021:8021"
+    networks:
+      sip: { ipv4_address: 172.29.0.20 }

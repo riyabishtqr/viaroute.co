@@ -1,0 +1,16 @@
+{
+  "trunks": [
+    {
+      "name": "verizon-a",
+      "inboundIps": ["198.51.100.10", "198.51.100.11"],
+      "outbound": { "host": "198.51.100.10", "port": 5060, "transport": "udp", "format": "e164" },
+      "priority": 1
+    },
+    {
+      "name": "broker-b",
+      "inboundIps": ["203.0.113.0/28"],
+      "outbound": { "host": "sip.broker-b.example", "username": "acct123", "password": "secret", "format": "1+10", "prefix": "" },
+      "priority": 2
+    }
+  ]
+}

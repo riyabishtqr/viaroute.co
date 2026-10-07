@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<!--
+  ViaRoute media server: a minimal FreeSWITCH that only
+    - accepts SIP calls from the trunk IPs in trunks.json (viaroute/acl/*.xml, written by the agent),
+    - parks them for the ViaRoute media agent (which drives everything over the event socket),
+    - sends outgoing calls through the trunk gateways (viaroute/gateways/*.xml).
+  Settings come from vars.xml, written at start-up from the environment (start.sh).
+-->
+<document type="freeswitch/xml">
+  <X-PRE-PROCESS cmd="include" data="vars.xml"/>
+
+  <section name="configuration" description="Various Configuration">
+    <configuration name="switch.conf" description="Core">
+      <settings>
+        <param name="colorize-console" value="false"/>
+        <param name="loglevel" value="$${log_level}"/>
+        <param name="max-sessions" value="$${max_sessions}"/>
+        <param name="sessions-per-second" value="$${sessions_per_second}"/>
+        <param name="rtp-start-port" value="$${rtp_start_port}"/>
+        <param name="rtp-end-port" value="$${rtp_end_port}"/>
+        <param name="dump-cores" value="no"/>
+        <param name="rtp-enable-zrtp" value="false"/>
+      </settings>
+    </configuration>
+
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_console"/>
+        <load module="mod_logfile"/>
+        <load module="mod_event_socket"/>
+        <load module="mod_sofia"/>
+        <load module="mod_commands"/>
+        <load module="mod_dptools"/>
+        <load module="mod_dialplan_xml"/>
+        <load module="mod_sndfile"/>
+        <load module="mod_native_file"/>
+        <load module="mod_tone_stream"/>
+        <load module="mod_shout"/>
+        <load module="mod_flite"/>
+        <load module="mod_say_en"/>
+      </modules>
+    </configuration>
+
+    <configuration name="console.conf" description="Console Logger">
+      <mappings><map name="all" value="console,debug,info,notice,warning,err,crit,alert"/></mappings>
+      <settings><param name="colorize" value="false"/><param name="loglevel" value="$${log_level}"/></settings>
+    </configuration>
+
+    <configuration name="logfile.conf" description="File Logging">
+      <settings><param name="rotate-on-hup" value="true"/></settings>
+      <profiles><profile name="default"><settings><param name="rollover" value="104857600"/><param name="maximum-rotate" value="5"/></settings>
+        <mappings><map name="all" value="info,notice,warning,err,crit,alert"/></mappings></profile></profiles>
+    </configuration>
+
+    <configuration name="event_socket.conf" description="Socket Client">
+      <settings>
+        <param name="nat-map" value="false"/>
+        <param name="listen-ip" value="$${esl_listen_ip}"/>
+        <param name="listen-port" value="8021"/>
+        <param name="password" value="$${esl_password}"/>
+        <param name="apply-inbound-acl" value="esl"/>
+      </settings>
+    </configuration>
+
+    <configuration name="acl.conf" description="Network Lists">
+      <network-lists>
+        <list name="esl" default="deny">
+          <node type="allow" cidr="127.0.0.0/8"/>
+          <node type="allow" cidr="$${esl_allow}"/>
+        </list>
+        <!-- list "trunks": every trunk's inboundIps, written by the agent -->
+        <X-PRE-PROCESS cmd="include" data="viaroute/acl/*.xml"/>
+      </network-lists>
+    </configuration>
+
+    <configuration name="sofia.conf" description="SIP">
+      <global_settings>
+        <param name="log-level" value="0"/>
+        <param name="debug-presence" value="0"/>
+      </global_settings>
+      <profiles>
+        <profile name="external">
+          <gateways>
+            <X-PRE-PROCESS cmd="include" data="viaroute/gateways/*.xml"/>
+          </gateways>
+          <settings>
+            <param name="context" value="public"/>
+            <param name="dialplan" value="XML"/>
+            <param name="sip-ip" value="$${local_ip_v4}"/>
+            <param name="rtp-ip" value="$${local_ip_v4}"/>
+            <param name="ext-sip-ip" value="$${external_ip}"/>
+            <param name="ext-rtp-ip" value="$${external_ip}"/>
+            <param name="sip-port" value="$${sip_port}"/>
+            <!-- Only trunks may send calls; nobody can register or log in. -->
+            <param name="apply-inbound-acl" value="trunks"/>
+            <param name="auth-calls" value="true"/>
+            <param name="accept-blind-reg" value="false"/>
+            <param name="accept-blind-auth" value="false"/>
+            <param name="disable-register" value="true"/>
+            <param name="disable-transfer" value="true"/>
+            <param name="manage-presence" value="false"/>
+            <param name="inbound-codec-prefs" value="PCMU,PCMA"/>
+            <param name="outbound-codec-prefs" value="PCMU,PCMA"/>
+            <param name="inbound-codec-negotiation" value="generous"/>
+            <param name="dtmf-type" value="rfc2833"/>
+            <param name="rfc2833-pt" value="101"/>
+            <param name="liberal-dtmf" value="true"/>
+            <param name="rtp-timer-name" value="soft"/>
+            <param name="hold-music" value="silence"/>
+            <param name="nonce-ttl" value="60"/>
+            <param name="user-agent-string" value="ViaRoute"/>
+            <param name="enable-100rel" value="false"/>
+            <param name="NDLB-received-in-nat-reg-contact" value="true"/>
+            <param name="aggressive-nat-detection" value="true"/>
+          </settings>
+        </profile>
+      </profiles>
+    </configuration>
+
+    <configuration name="shout.conf" description="mod shout">
+      <settings><param name="encode-brate" value="32"/><param name="encode-quality" value="5"/></settings>
+    </configuration>
+  </section>
+
+  <section name="dialplan" description="Regex/XML Dialplan">
+    <context name="public">
+      <!-- Every call from a trunk: mark it and wait for the agent (ViaRoute decides what happens). -->
+      <extension name="viaroute-inbound">
+        <condition field="destination_number" expression="^(.+)$">
+          <action application="set" data="vr_inbound=true"/>
+          <action application="set" data="tts_engine=flite"/>
+          <action application="set" data="tts_voice=$${tts_voice}"/>
+          <action application="set" data="hangup_after_bridge=false"/>
+          <action application="set" data="park_after_bridge=true"/>
+          <!-- Hang up a call whose audio stops for 5 minutes (dead line); 30 minutes while on hold. -->
+          <action application="set" data="media_timeout=300000"/>
+          <action application="set" data="media_hold_timeout=1800000"/>
+          <action application="park"/>
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>

@@ -31,6 +31,11 @@ flowchart LR
 Everything runs on Cloudflare: a Worker in front, API / web / background-worker containers behind it, recordings in R2,
 with managed Postgres and Redis. Step-by-step: [deploy/cloudflare/README.md](deploy/cloudflare/README.md).
 
+## SIP trunks: media server
+
+Trunks that send plain SIP (Verizon resellers, wholesale carriers) connect through a small media server
+(FreeSWITCH + ViaRoute media agent) on its own Linux server with a public IP: [infra/media/README.md](infra/media/README.md).
+
 ## 0a. xCloud / Coolify ("Deploy via Git", one port)
 
 The root `docker-compose.yml` runs everything behind one port (**8080**): web app, API at `/api`, test inbox at `/mail`.

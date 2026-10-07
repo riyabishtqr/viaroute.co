@@ -1,0 +1,18 @@
+{
+  "name": "@viaroute/media-agent",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Runs next to FreeSWITCH: connects SIP trunks to ViaRoute through the ViaRoute Carrier API",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "test": "tsc -p tsconfig.json && node --test dist/test/unit.test.js",
+    "test:sip": "tsc -p tsconfig.json && node dist/test/sip.integration.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "5.9.3"
+  }
+}

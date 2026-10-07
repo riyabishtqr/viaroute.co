@@ -1,0 +1,57 @@
+# ViaRoute media server: SIP trunks (Verizon resellers, wholesale carriers…) → ViaRoute.
+# Runs on its own Linux server with a public IP (Cloudflare can't carry SIP/RTP). See infra/media/README.md.
+#
+#   cp .env.example .env && nano .env      # fill in
+#   cp trunks.example.json trunks.json && nano trunks.json
+#   docker compose up -d --build
+#
+# Host networking: SIP (5060) and the RTP audio ports must reach FreeSWITCH directly, without Docker NAT.
+name: viaroute-media
+
+services:
+  freeswitch:
+    build: ./freeswitch
+    network_mode: host
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ESL_LISTEN_IP: 127.0.0.1
+    volumes:
+      - fsgen:/etc/freeswitch/viaroute
+      - recordings:/recordings
+      - fslogs:/var/log/freeswitch
+    ulimits:
+      nofile: 65536
+
+  agent:
+    build: ../../apps/media-agent
+    network_mode: host
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LISTEN_HOST: 127.0.0.1
+      LISTEN_PORT: "8088"
+      ESL_HOST: 127.0.0.1
+      TRUNKS_FILE: /etc/viaroute/trunks.json
+      PUBLIC_URL: https://${MEDIA_DOMAIN:?set MEDIA_DOMAIN}
+    volumes:
+      - ./trunks.json:/etc/viaroute/trunks.json:ro
+      - fsgen:/etc/freeswitch/viaroute
+      - recordings:/recordings
+    depends_on:
+      - freeswitch
+
+  # HTTPS for the agent: ViaRoute sends commands here and downloads recordings from here.
+  caddy:
+    image: caddy:2-alpine
+    network_mode: host
+    restart: unless-stopped
+    command: caddy reverse-proxy --from ${MEDIA_DOMAIN} --to 127.0.0.1:8088
+    volumes:
+      - caddy_data:/data
+
+volumes:
+  fsgen:
+  recordings:
+  fslogs:
+  caddy_data:

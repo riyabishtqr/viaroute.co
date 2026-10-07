@@ -1,0 +1,10 @@
+{
+  "trunks": [
+    {
+      "name": "test-carrier",
+      "inboundIps": ["172.29.0.20"],
+      "outbound": { "host": "172.29.0.20", "port": 5060, "format": "1+10" },
+      "priority": 1
+    }
+  ]
+}

@@ -10,3 +10,8 @@ storage/
 .env.production
 infra/backups/
 .env.trial
+
+# Media server: real settings and trunk logins
+infra/media/.env
+infra/media/trunks.json
+apps/media-agent/dist
