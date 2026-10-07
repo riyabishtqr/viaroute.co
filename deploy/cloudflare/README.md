@@ -40,21 +40,20 @@ SSL/TLS mode: **Full**.
 ```bash
 pnpm install
 cd deploy/cloudflare
-npx wrangler login                    # log in with the account that holds viaroute.co
-# If that login can see several accounts, put its Account ID in wrangler.jsonc ("account_id").
+pnpm run login        # browser: log in to the Cloudflare account that holds viaroute.co
+pnpm run whoami       # check it shows that account
+# This login is kept in .wrangler/home for this project only; your other wrangler projects keep theirs.
 
 # Secrets (each command asks for the value)
-npx wrangler secret put DATABASE_URL          # postgresql://user:pass@host:5432/viaroute?sslmode=require
-npx wrangler secret put REDIS_URL             # rediss://default:pass@host:port
-npx wrangler secret put JWT_SECRET            # node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-npx wrangler secret put ENCRYPTION_KEY        # node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"  (64 chars)
-npx wrangler secret put ADMIN_EMAIL
-npx wrangler secret put ADMIN_PASSWORD        # 12+ characters
-npx wrangler secret put SMTP_URL              # smtps://resend:API_KEY@smtp.resend.com:465
-npx wrangler secret put S3_BUCKET             # viaroute-recordings
-npx wrangler secret put S3_ENDPOINT           # https://<account id>.r2.cloudflarestorage.com
-npx wrangler secret put S3_ACCESS_KEY_ID
-npx wrangler secret put S3_SECRET_ACCESS_KEY
+pnpm run secret DATABASE_URL          # postgresql://user:pass@host:5432/viaroute?sslmode=require
+pnpm run secret REDIS_URL             # rediss://default:pass@host:port
+pnpm run secret JWT_SECRET            # node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+pnpm run secret ENCRYPTION_KEY        # node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"  (64 chars)
+pnpm run secret ADMIN_EMAIL
+pnpm run secret ADMIN_PASSWORD        # 12+ characters
+pnpm run secret SMTP_URL              # smtps://resend:API_KEY@smtp.resend.com:465
+pnpm run secret S3_ACCESS_KEY_ID      # R2 → Manage API tokens → Object Read & Write, bucket viaroute-recordings
+pnpm run secret S3_SECRET_ACCESS_KEY
 # Later: TELNYX_API_KEY, TELNYX_PUBLIC_KEY, TELNYX_CONNECTION_ID, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 
 pnpm run deploy    # builds api + web images, pushes them, deploys the Worker
@@ -65,7 +64,7 @@ The first deploy takes several minutes before containers answer. Then:
 - `https://viaroute.co/api/health` → `{"ok":true,…}`
 - `https://viaroute.co/login` → admin login (ADMIN_EMAIL / ADMIN_PASSWORD)
 - `https://<customer>.viaroute.co` → each customer's portal
-- `npx wrangler tail` → live logs; Cloudflare dashboard → Workers & Pages → viaroute → Containers
+- `pnpm run tail` → live logs; Cloudflare dashboard → Workers & Pages → viaroute → Containers
 
 Database migrations run automatically when the API starts.
 

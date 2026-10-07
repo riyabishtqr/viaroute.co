@@ -4,7 +4,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "viaroute",
   // The Cloudflare account that holds viaroute.co (dashboard → Workers & Pages → right sidebar → Account ID).
-  // "account_id": "…",
+  "account_id": "c034030171e4d6976286ac50a8db659c",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -22,6 +22,10 @@
   "vars": {
     "APP_DOMAIN": "viaroute.co",
     "MAIL_FROM": "ViaRoute <no-reply@viaroute.co>",
+    // Recordings in R2 (this account). Keys: secrets S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY.
+    "S3_BUCKET": "viaroute-recordings",
+    "S3_ENDPOINT": "https://c034030171e4d6976286ac50a8db659c.r2.cloudflarestorage.com",
+    "S3_REGION": "auto",
     "SIMULATOR_ENABLED": "true",
     "TRIAL_DAYS": "14",
     // Fixed pool sizes (Containers have no autoscaling yet). Raise together with max_instances below.
@@ -29,7 +33,7 @@
     "WEB_INSTANCES": "2"
   },
   // Secrets (wrangler secret put …): DATABASE_URL, REDIS_URL, JWT_SECRET, ENCRYPTION_KEY, ADMIN_EMAIL,
-  // ADMIN_PASSWORD, SMTP_URL, S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY,
+  // ADMIN_PASSWORD, SMTP_URL, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY,
   // and when ready TELNYX_API_KEY, TELNYX_PUBLIC_KEY, TELNYX_CONNECTION_ID, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET.
 
   "containers": [
